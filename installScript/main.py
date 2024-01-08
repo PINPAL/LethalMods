@@ -125,7 +125,7 @@ try:
     printHeader("Moving new LethalMods")
     try:
         # move the new BepInEx folder
-        shutil.move(lethalCompanyPath + r"\hethalMods\LethalMods-main\Lethal Company\BepInEx", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\BepInEx", lethalCompanyPath)
         # move the new doorstop_config.ini
         shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\doorstop_config.ini", lethalCompanyPath)
         # move the new winhttp.dll
