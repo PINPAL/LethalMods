@@ -125,11 +125,11 @@ try:
     printHeader("Moving new LethalMods")
     try:
         # move the new BepInEx folder
-        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\BepInEx", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\BepInEx", lethalCompanyPath)
         # move the new doorstop_config.ini
-        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\doorstop_config.ini", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\doorstop_config.ini", lethalCompanyPath)
         # move the new winhttp.dll
-        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\winhttp.dll", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\winhttp.dll", lethalCompanyPath)
     except:
         printMessage("Failed to move files", True)
 
