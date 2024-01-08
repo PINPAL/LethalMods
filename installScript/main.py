@@ -104,39 +104,39 @@ try:
     print("Lethal Company is installed at: " + lethalCompanyPath)
 
     printHeader("Downloading the latest version of LethalMods")
-    pathToZipFile = lethalCompanyPath + "/LethalMods.zip"
+    pathToZipFile = lethalCompanyPath + "\LethalMods.zip"
     # urllib.request.urlretrieve("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
     download("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
 
     printHeader("Extracting LethalMods")
     # extract the zip file
     with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
-        zip_ref.extractall(lethalCompanyPath + "/LethalMods")
+        zip_ref.extractall(lethalCompanyPath + r"\LethalMods")
 
     printHeader("Deleting old LethalMods")
     # delete BepInEx folder
     try:
-        shutil.rmtree(lethalCompanyPath + "/BepInEx")
-        os.remove(lethalCompanyPath + "/doorstop_config.ini")
-        os.remove(lethalCompanyPath + "/winhttp.dll")
+        shutil.rmtree(lethalCompanyPath + r"\BepInEx")
+        os.remove(lethalCompanyPath + r"\doorstop_config.ini")
+        os.remove(lethalCompanyPath + r"\winhttp.dll")
     except:
         print("BepInEx,doorstop_config or winhttp not found")
     
     printHeader("Moving new LethalMods")
     try:
         # move the new BepInEx folder
-        shutil.move(lethalCompanyPath + "/LethalMods/LethalMods-main/Lethal Company/BepInEx", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\hethalMods\LethalMods-main\Lethal Company\BepInEx", lethalCompanyPath)
         # move the new doorstop_config.ini
-        shutil.move(lethalCompanyPath + "/LethalMods/LethalMods-main/Lethal Company/doorstop_config.ini", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\doorstop_config.ini", lethalCompanyPath)
         # move the new winhttp.dll
-        shutil.move(lethalCompanyPath + "/LethalMods/LethalMods-main/Lethal Company/winhttp.dll", lethalCompanyPath)
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\Lethal Company\winhttp.dll", lethalCompanyPath)
     except:
         printMessage("Failed to move files", True)
 
     printHeader("Cleaning up LethalMods")
     try:
-        shutil.rmtree(lethalCompanyPath + "/LethalMods")
-        os.remove(lethalCompanyPath + "/LethalMods.zip")
+        shutil.rmtree(lethalCompanyPath + r"/LethalMods")
+        os.remove(lethalCompanyPath + r"/LethalMods.zip")
     except:
         printMessage("Failed to delete LethalMods", True)
 
