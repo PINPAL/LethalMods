@@ -6,7 +6,11 @@ import ctypes
 import logging
 import zipfile
 import shutil
-import urllib.request
+import requests
+from tqdm import tqdm
+
+# To build the exe run the following command in the terminal
+# python -m PyInstaller main.py -y --onefile -n Installer
 
 logging.basicConfig(filename="errorlog.log",
                     filemode='a',
@@ -79,6 +83,20 @@ def findInstallPath():
     else:
         return lethalCompanyPath
 
+def download(url: str, fname: str, chunk_size=1024):
+    resp = requests.get(url, stream=True)
+    total = int(resp.headers.get('content-length', 0))
+    with open(fname, 'wb') as file, tqdm(
+        desc=fname,
+        total=total,
+        unit='iB',
+        unit_scale=True,
+        unit_divisor=1024,
+    ) as bar:
+        for data in resp.iter_content(chunk_size=chunk_size):
+            size = file.write(data)
+            bar.update(size)
+
 # main program
 # ==============================
 try:
@@ -87,7 +105,8 @@ try:
 
     printHeader("Downloading the latest version of LethalMods")
     pathToZipFile = lethalCompanyPath + "/LethalMods.zip"
-    urllib.request.urlretrieve("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
+    # urllib.request.urlretrieve("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
+    download("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
 
     printHeader("Extracting LethalMods")
     # extract the zip file
