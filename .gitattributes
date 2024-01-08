@@ -1,3 +1,1 @@
-*.lem filter=lfs diff=lfs merge=lfs -text
-.*.lem filter=lfs diff=lfs merge=lfs -text
-*.lem !text !filter !merge !diff
+.lem filter=lfs diff=lfs merge=lfs -text
