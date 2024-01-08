@@ -4,11 +4,11 @@ import winreg
 import vdf
 import ctypes
 import logging
-import subprocess
-from shutil import which
-# from git import Repo
+import zipfile
+import shutil
+import urllib.request
 
-logging.basicConfig(filename="logfile.log",
+logging.basicConfig(filename="errorlog.log",
                     filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S',
@@ -79,41 +79,50 @@ def findInstallPath():
     else:
         return lethalCompanyPath
 
-# def cloneRepo():
-#     printHeader("Cloning Repo")
-#     # clone the repo
-#     try:
-#         Repo.clone_from("https://github.com/PINPAL/LethalMods", lethalCompanyPath + r"\LethalMods")
-#     except:
-#         printMessage("Failed to clone repo", True)
-
-def run(cmd):
-    completed = subprocess.run(["powershell", "-Command", cmd], capture_output=True)
-    return completed
-
-def isGitInstalled():
-    if (which("git") is not None) :
-        print("Git is installed")
-    else :
-        print("Git is not installed")
-        # install it automatically
-        printHeader("Installing Git\nPlease wait...")
-        installGitCommand = run("winget install --id Git.Git -e --source winget")
-        if installGitCommand.returncode != 0:
-            errorlog = str(installGitCommand.stdout, 'utf-8')
-            printMessage("Failed to install Git" + errorlog, True)
-        else:
-            printHeader("Git Installed Successfully")
-
-
-
 # main program
 # ==============================
 try:
     lethalCompanyPath = findInstallPath()
-    printMessage("Lethal Company.exe found in \n" + lethalCompanyPath, False)
-    isGitInstalled()
-    input()
+    print("Lethal Company is installed at: " + lethalCompanyPath)
+
+    printHeader("Downloading the latest version of LethalMods")
+    pathToZipFile = lethalCompanyPath + "/LethalMods.zip"
+    urllib.request.urlretrieve("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
+
+    printHeader("Extracting LethalMods")
+    # extract the zip file
+    with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
+        zip_ref.extractall(lethalCompanyPath + "/LethalMods")
+
+    printHeader("Deleting old LethalMods")
+    # delete BepInEx folder
+    try:
+        shutil.rmtree(lethalCompanyPath + "/BepInEx")
+        os.remove(lethalCompanyPath + "/doorstop_config.ini")
+        os.remove(lethalCompanyPath + "/winhttp.dll")
+    except:
+        print("BepInEx,doorstop_config or winhttp not found")
+    
+    printHeader("Moving new LethalMods")
+    try:
+        # move the new BepInEx folder
+        shutil.move(lethalCompanyPath + "/LethalMods/LethalMods-main/Lethal Company/BepInEx", lethalCompanyPath)
+        # move the new doorstop_config.ini
+        shutil.move(lethalCompanyPath + "/LethalMods/LethalMods-main/Lethal Company/doorstop_config.ini", lethalCompanyPath)
+        # move the new winhttp.dll
+        shutil.move(lethalCompanyPath + "/LethalMods/LethalMods-main/Lethal Company/winhttp.dll", lethalCompanyPath)
+    except:
+        printMessage("Failed to move files", True)
+
+    printHeader("Cleaning up LethalMods")
+    try:
+        shutil.rmtree(lethalCompanyPath + "/LethalMods")
+        os.remove(lethalCompanyPath + "/LethalMods.zip")
+    except:
+        printMessage("Failed to delete LethalMods", True)
+
+    # finished
+    printMessage("LethalMods installed successfully", False)
     sys.exit()
 except:
     logging.exception("Something awful happened!")
