@@ -21,3 +21,4 @@ _Manual Install_<br>
 -   Download mods from source instead to reduce file size for upload
 -   Automatically analyse differences in file structure to optimise updates
 -   Potentially skip all the analysis and just keep map files as the rest are tiny filesizes
+-   Automatically close the game
