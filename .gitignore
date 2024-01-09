@@ -1,3 +1,4 @@
 installScript/build/*
+installScript/dist/errorlog.log
 installScript/Installer.spec
 installScript/logfile.log
