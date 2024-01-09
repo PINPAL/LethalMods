@@ -1,0 +1,6 @@
+22:22:02,75 urllib3.connectionpool DEBUG Starting new HTTPS connection (1): codeload.github.com:443
+22:22:02,556 urllib3.connectionpool DEBUG https://codeload.github.com:443 "GET /PINPAL/LethalMods/zip/refs/heads/main HTTP/1.1" 200 None
+22:22:20,596 root ERROR Something awful happened!
+Traceback (most recent call last):
+  File "main.py", line 145, in <module>
+SystemExit
