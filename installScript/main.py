@@ -1,186 +1,198 @@
-import eel
-import os
-import winreg
-import vdf
-import zipfile
-import shutil
-import subprocess
-from urllib.request import urlopen
+import customtkinter
+from PIL import Image
 
-# To build the exe run the following command in the terminal
-# python -m PyInstaller main.py -y --onefile -n LC-Mod-Installer --add-data "web;web" --icon web/favicon.ico --noconsole --version-file version.txt
+# Images
+checkmark_off = customtkinter.CTkImage(dark_image=Image.open("assets/checkmark_off.png"),size=(24, 24))
+checkmark_on = customtkinter.CTkImage(dark_image=Image.open("assets/checkmark_on.png"),size=(24, 24))
 
-# initialize eel
-eel.init('web', allowed_extensions=['.js', '.html'])
+# Function called when "Install" button is pressed
+def startInstallation():
+    print("Installation started")
+    # Hide Install Button
+    installButton.grid_forget()
+    # Show Progress Bar
+    progressBar.grid(row=0, column=0, padx=0, pady=20, sticky="ewns")
+    footerSeperator.grid_forget()
+    # Update Progress Bar
+    updateProgressCheck(0) 
+    addConsoleText("Starting..", isHeader=True)
 
-def process_exists(process_name):
-    call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
-    # use buildin check_output right away
-    output = subprocess.check_output(call).decode()
-    # check in last line for process name
-    last_line = output.strip().split('\r\n')[-1]
-    # because Fail message could be translated
-    return last_line.lower().startswith(process_name.lower())
+# color variables
+mainBackground = "#1a1b26"
+consoleBackground = "#31323c"
+consoleTextNormal = "#a4a8ac"
+consoleTextHeader = "#ffffff"
+consoleTextError = "#c95862"
+consoleTextSuccess = "#9dcc67"
+sidebarBackground = "#5cabed"
+sidebarForeground = "#a3e0f7"
+buttonBorder = "#53545c"
 
-def findInstallPath():
-    eel.addToConsole("Searching for Steam Install Path", False, True)
-    # read the InstallPath key from the registry
-    try:
-        #connecting to key in registry
-        theRegistry = winreg.ConnectRegistry(None,winreg.HKEY_LOCAL_MACHINE)
-        registryLocation = winreg.OpenKey(theRegistry,r"SOFTWARE\WOW6432Node\Valve\Steam")
-        steamInstallPathArray = winreg.QueryValueEx(registryLocation,"InstallPath")
-        steamInstallPath = steamInstallPathArray[0]
-    except:
-        eel.addToConsole("Steam Install Path not found in registry", True)
-    # print the value
-    eel.addToConsole("Steam is installed at: " + steamInstallPath + "\n")
-    eel.updateProgressText("findingSteamPath")
+# Define App
+App = customtkinter.CTk()
+App.iconbitmap("assets/favicon.ico")
+App.title("Lethal Company Mod Installer")
+App._set_appearance_mode("dark")
+App.geometry("960x540")
+App.minsize(960, 540)
+App.grid_rowconfigure(0, weight=1) # full height 
+App.grid_columnconfigure(1, weight=1) # make main content fill width
 
-    lethalCompanySteamId = "1966720"
+# font variables
+robotoFont = customtkinter.CTkFont(family="Roboto", size=16, weight="normal")
+robotoFontMedium = customtkinter.CTkFont(family="Roboto-Medium", size=16, weight="bold")
+robotoFontBold = customtkinter.CTkFont(family="Roboto-Bold", size=20, weight="bold")
+consoleFont = customtkinter.CTkFont(family="Consolas", size=12, weight="normal")
 
-    # Read the libraryfolders.vdf file
-    eel.addToConsole("Searching for Lethal Company in Steam Libraries", False, True)
-    try:
-        vdfFile = vdf.parse(open(steamInstallPath + r"\steamapps\libraryfolders.vdf"))
-    except:
-        eel.addToConsole("Could not find libraryfolders.vdf", True)
-    # loop through the dictionary of dictionaries to libraries
-    for libraryKey, libraryValues in vdfFile["libraryfolders"].items():
-        # print the path value of the library
-        eel.addToConsole("Searching for Lethal Company in: " + libraryValues["path"])
-        # loop through the apps dictionary and find the lethal company steam id
-        for appKey, appValue in libraryValues["apps"].items():
-            if appKey == lethalCompanySteamId:
-                lethalCompanyPath = libraryValues["path"] + r"\steamapps\common\Lethal Company"
-                eel.addToConsole("--> Found Lethal Company in " + libraryValues["path"])
-                eel.updateProgressText("findingLethalCompany")
-                break
-        else:
-            continue
+# Define Sidebar
+sidebar = customtkinter.CTkFrame(App, fg_color=sidebarBackground, corner_radius=0)
+sidebar.grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
+sidebar.rowconfigure(0, weight=1)
+    
+# Add Content to Sidebar
+progressChecks = []
+progressChecksText = ["Finding Steam Path", "Finding Lethal Company", "Checking Installation", "Downloading Mods", "Extracting Mods", "Installing Mods", "Cleaning Up", "Complete"]
+for progressCheck in progressChecksText:
+        sidebarIndex = progressChecksText.index(progressCheck)
+        progressCheckLabel = customtkinter.CTkLabel(sidebar)
+        progressCheckLabel.configure(image=checkmark_off)
+        progressCheckLabel.configure(compound="left")
+        progressCheckLabel.configure(padx=12)
+        progressCheckLabel.configure(text=progressCheck)
+        progressCheckLabel.configure(font=robotoFont)
+        progressCheckLabel.configure(fg_color="transparent")
+        progressCheckLabel.configure(text_color=sidebarForeground)
+        progressCheckLabel.configure(corner_radius=0)
+        progressChecks.append(progressCheckLabel)
+        progressChecks[sidebarIndex].grid(row=sidebarIndex+1, column=0, padx=24, pady=16, sticky="wns")
+# Add Seperator to Sidebar
+sidebarSeperator = customtkinter.CTkLabel(sidebar, text=" ")
+sidebarSeperator.grid(row=sidebarIndex+2, column=0, padx=24, pady=0, sticky="ewns")
+sidebar.rowconfigure(sidebarIndex+2, weight=1)
 
-    eel.addToConsole("Checking Installation is Valid", False, True)
-    eel.addToConsole("Checking in: " + lethalCompanyPath)
-    # Check if Lethal Company.exe exists
-    if not (os.path.isfile(lethalCompanyPath + r"\Lethal Company.exe")):
-        eel.addToConsole("Lethal Company.exe not found in \n" + lethalCompanyPath, True)
-    else:
-        eel.addToConsole("Lethal Company.exe found in \n" + lethalCompanyPath)
-        eel.updateProgressText("checkingInstallation")
-        return lethalCompanyPath
+# Define Main Content
+mainContent = customtkinter.CTkFrame(App, fg_color=mainBackground, corner_radius=0)
+mainContent.grid(row=0, column=1, padx=0, pady=0, sticky="ewns")
+mainContent.grid_columnconfigure(0, weight=1)
+mainContent.grid_rowconfigure(1, weight=1)
 
-def download(url: str, filename: str):
-    readBytes = 0
-    chunkSize = 1024
-    # Open the URL address.
-    with urlopen(url) as r:
-        # Tell the window the amount of bytes to be downloaded.
-        totalSize = 0
-        previousSize = 0
-        try:
-            totalSize = int(r.info()["Content-Length"])
-            eel.addToConsole("Total: " + str(round(totalSize / 1024 / 1024, 2)) + "MB")
-        except:
-            eel.addToConsole("Could not get Content-Length", True)
-            eel.addToConsole("Downloading anyway..")
-            totalSize = 0
-        with open(filename, "ab") as f:
-            while True:
-                # Read a piece of the file we are downloading.
-                chunk = r.read(chunkSize)
-                # If the result is `None`, that means data is not
-                # downloaded yet. Just keep waiting.
-                if chunk is None:
-                    continue
-                # If the result is an empty `bytes` instance, then
-                # the file is complete.
-                elif chunk == b"":
-                    break
-                # Write into the local file the downloaded chunk.
-                f.write(chunk)
-                readBytes += chunkSize
-                # Check if the last update was more than 1MB ago.
-                if (previousSize + 1048576) < readBytes :
-                    # Tell the window how many bytes we have received.
-                    eel.updateDownloadProgress(readBytes, totalSize)
-                    previousSize = readBytes
+# Add Header to Main Content
+mainContentHeader = customtkinter.CTkFrame(mainContent, fg_color="transparent")
+mainContentHeader.grid(row=0, column=0, padx=24, pady=18, sticky="ewns")
+mainContentHeader.columnconfigure(1, weight=1)
+# Add Frame for Title and Subtitle
+titleFrame = customtkinter.CTkFrame(mainContentHeader, fg_color="transparent")
+titleFrame.grid(row=0, column=0, padx=0, pady=0)
+# Add Title to TitleFrame
+title = customtkinter.CTkLabel(titleFrame, text="Lethal Company Mod Installer", font=robotoFontBold, text_color=consoleTextHeader)
+title.grid(row=0, column=0, padx=0, pady=8)
+# Add SubtitleFrame to TitleFrame
+subtitleFrame = customtkinter.CTkFrame(titleFrame, fg_color="transparent")
+subtitleFrame.grid(row=1, column=0, padx=0, pady=0, sticky="ewns")
+subtitleFrame.columnconfigure(1, weight=1)
+# Add Subtitle to Subtitle Frame
+subtitle = customtkinter.CTkLabel(subtitleFrame, text="Created by PINPAL", font=robotoFont, text_color=consoleTextNormal)
+subtitle.grid(row=0, column=0, padx=0, pady=0, sticky="w")
+# Add Seperator to Subtitle Frame
+subtitleSeperator = customtkinter.CTkLabel(subtitleFrame, text="-", font=robotoFontMedium, text_color=consoleTextNormal)
+subtitleSeperator.grid(row=0, column=1, padx=4, pady=0, sticky="nesw")
+# Add Link to Subtitle Frame
+subtitleLink = customtkinter.CTkLabel(subtitleFrame, text="pinpal.github.io", font=robotoFont, text_color=sidebarBackground)
+subtitleLink.grid(row=0, column=2, padx=0, pady=0, sticky="e")
+# Add Logo to Main Content Header
+logo = customtkinter.CTkLabel(mainContentHeader, text="")
+logo.configure(image=customtkinter.CTkImage(dark_image=Image.open("assets/favicon.ico"),size=(48, 48)))
+logo.grid(row=0, column=2, padx=0, pady=0, sticky="e")
 
-# ==============================
-# main program
-# ==============================
-@eel.expose
-def pythonMain():
-    eel.addToConsole("Running Python.." ) 
-    if (process_exists("Lethal Company.exe")):
-        eel.addToConsole("Lethal Company is running, please close the game and try again", True)
-        return
-    lethalCompanyPath = findInstallPath()
+# Add "console" to Main Content
+console = customtkinter.CTkScrollableFrame(mainContent)
+console.configure(fg_color=consoleBackground)
+console.configure(scrollbar_fg_color=consoleBackground)
+console.configure(scrollbar_button_color=consoleBackground)
+console.grid(row=1, column=0, padx=24, pady=2, sticky="ewns")
+console.columnconfigure(0, weight=1)
 
-    eel.updateProgressText("downloadingMods", True)
-    eel.addToConsole("Downloading the latest version of Lethal Company Mods", False, True)
-    eel.addToConsole("Please wait, this may take a while..")
-    pathToZipFile = lethalCompanyPath + r"\LethalMods.zip"
-    download("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
-    eel.addToConsole("LethalMods downloaded to: " + pathToZipFile)
+# Add Footer to Main Content
+mainContentFooter = customtkinter.CTkFrame(mainContent)
+mainContentFooter.configure(fg_color="transparent")
+mainContentFooter.grid(row=2, column=0, padx=24, pady=4, sticky="ewns")
+mainContentFooter.grid_columnconfigure(0, weight=1)
+# Add Progress Bar to Footer 
+progressBar = customtkinter.CTkProgressBar(mainContentFooter)
+progressBar.configure(mode="determinate")
+progressBar.configure(height=12)
+progressBar.configure(determinate_speed=0)
+progressBar.configure(fg_color=consoleBackground)
+progressBar.configure(progress_color=sidebarBackground)
+progressBar.stop()
+progressBar.set(0)
+# Add Seperator to Footer
+footerSeperator = customtkinter.CTkLabel(mainContentFooter)
+footerSeperator.configure(text=" ")
+footerSeperator.grid(row=0, column=0, padx=4, pady=0, sticky="ewns")
+# Add Button to Footer
+installButton = customtkinter.CTkButton(mainContentFooter)
+installButton.grid(row=0, column=2, padx=0, pady=12, sticky="wns")
+installButton.configure(text="Start Installation")
+installButton.configure(font=robotoFont)
+installButton.configure(fg_color="transparent")
+installButton.configure(border_width=2)
+installButton.configure(border_color=buttonBorder)
+installButton.configure(hover_color=sidebarBackground)
+installButton.configure(command=startInstallation)
 
-    eel.addToConsole("Extracting LethalMods", False, True)
-    eel.updateProgressText("downloadingMods")
-    # extract the zip file
-    try:
-        with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
-            zip_ref.extractall(lethalCompanyPath + r"\LethalMods")
-    except:
-        eel.addToConsole("Failed to extract LethalMods", True)
-    eel.updateProgressText("extractingMods")
-    eel.addToConsole("Deleting old LethalMods", False, True)
-    # delete BepInEx folder
-    try:
-        shutil.rmtree(lethalCompanyPath + r"\BepInEx")
-        eel.addToConsole("BepInEx deleted")
-    except:
-        eel.addToConsole("BepInEx Folder not found", True)
-    # delete doorstop_config.ini
-    try:
-        os.remove(lethalCompanyPath + r"\doorstop_config.ini")
-        eel.addToConsole("doorstop_config.ini deleted")
-    except:
-        eel.addToConsole("doorstop_config.ini not found", True)
-    # delete winhttp.dll
-    try:
-        os.remove(lethalCompanyPath + r"\winhttp.dll")
-        eel.addToConsole("winhttp.dll deleted")
-    except:
-        eel.addToConsole("winhttp.dll not found", True) 
+# Function to add text to console
+global currentConsoleRow
+currentConsoleRow = 0
+def addConsoleText(text:str, isHeader: bool = False, type: {"normal", "error", "success"} = "normal"):
+    global currentConsoleRow
+    # Handle Custom Colors for Type
+    textColor = consoleTextNormal
+    if (type == "normal" and isHeader):
+        textColor = consoleTextHeader
+    elif (type == "error"):
+        textColor = consoleTextError
+    elif (type == "success"):
+        textColor = consoleTextSuccess
+    # Create Label
+    consoleText = customtkinter.CTkLabel(console)
+    consoleText.configure(text=text)
+    consoleText.configure(font=consoleFont)
+    consoleText.configure(fg_color="transparent")
+    consoleText.configure(text_color=textColor)
+    consoleText.configure(justify="left")
+    consoleText.configure(corner_radius=0)
+    # Handle Seperator for Header
+    if (isHeader):
+        consoleTextSeperator = customtkinter.CTkFrame(console)
+        consoleTextSeperator.configure(fg_color=textColor)
+        consoleTextSeperator.configure(height=2)
+        consoleTextSeperator.grid(row=currentConsoleRow, column=0, padx=8, pady=4, sticky="ew")
+        currentConsoleRow += 1
+    # Add Label to Console 
+    consoleText.grid(row=currentConsoleRow, column=0, padx=8, pady=0, sticky="w")
+    currentConsoleRow += 1
+    # Handle Seperator for Header
+    if (isHeader):
+        consoleTextSeperator = customtkinter.CTkFrame(console)
+        consoleTextSeperator.configure(fg_color=textColor)
+        consoleTextSeperator.configure(height=2)
+        consoleTextSeperator.grid(row=currentConsoleRow, column=0, padx=8, pady=4, sticky="ew")
+        currentConsoleRow += 1
 
-    eel.updateProgressText("removingOldMods")
-    eel.addToConsole("Moving Mod Files", False, True)
-    try:
-        # move the new BepInEx folder
-        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\BepInEx", lethalCompanyPath)
-        eel.addToConsole("BepInEx moved")
-        # move the new doorstop_config.ini
-        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\doorstop_config.ini", lethalCompanyPath)
-        eel.addToConsole("doorstop_config.ini moved")
-        # move the new winhttp.dll
-        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\winhttp.dll", lethalCompanyPath)
-        eel.addToConsole("winhttp.dll moved")
-    except:
-        eel.addToConsole("Failed to move files", True)
+# function to update progress bar
+def updateProgressBar(progress:int):
+    progressBar.set(progress)
 
-    eel.updateProgressText("movingNewMods")
-    eel.addToConsole("Cleaning up LethalMods", False, True)
-    try:
-        shutil.rmtree(lethalCompanyPath + r"/LethalMods")
-        eel.addToConsole("LethalMods deleted")
-        os.remove(lethalCompanyPath + r"/LethalMods.zip")
-        eel.addToConsole("LethalMods.zip deleted")
-    except:
-        eel.addToConsole("Failed to delete LethalMods", True)
+# function to update progress check
+def updateProgressCheck(index:int):
+    progressChecks[index].configure(image=checkmark_on)
+    progressChecks[index].configure(text_color="white")
+    progressChecks[index].configure(font=robotoFontMedium)
 
-    # finished
-    eel.updateProgressText("cleaningUp")
-    eel.updateProgressText("complete")
-    eel.addToConsole("LethalMods installed successfully", False, True, True)
 
-# run the GUI
-eel.start('main.html', size=(1000, 540), Block=False ) 
+# Run App
+addConsoleText("Ready to Start..")
+addConsoleText("Awaiting User Input..")
+
+App.mainloop()
