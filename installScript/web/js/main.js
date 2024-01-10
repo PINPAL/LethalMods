@@ -62,6 +62,7 @@ function updateDownloadProgress(current, total) {
 		progress = totalProgress + (progress / 100) * (100 / 9);
 		updateProgressBar("mainProgressBar", progress);
 	} else {
+		currentMB = Math.round(current / 1024 / 1024);
 		addToConsole("Downloading Mods: " + currentMB + "MB of Unknown Size");
 	}
 }

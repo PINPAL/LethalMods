@@ -4,6 +4,7 @@ import winreg
 import vdf
 import zipfile
 import shutil
+import subprocess
 from urllib.request import urlopen
 
 # To build the exe run the following command in the terminal
@@ -11,6 +12,15 @@ from urllib.request import urlopen
 
 # initialize eel
 eel.init('web', allowed_extensions=['.js', '.html'])
+
+def process_exists(process_name):
+    call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
+    # use buildin check_output right away
+    output = subprocess.check_output(call).decode()
+    # check in last line for process name
+    last_line = output.strip().split('\r\n')[-1]
+    # because Fail message could be translated
+    return last_line.lower().startswith(process_name.lower())
 
 def findInstallPath():
     eel.addToConsole("Searching for Steam Install Path", False, True)
@@ -101,6 +111,9 @@ def download(url: str, filename: str):
 @eel.expose
 def pythonMain():
     eel.addToConsole("Running Python.." ) 
+    if (process_exists("Lethal Company.exe")):
+        eel.addToConsole("Lethal Company is running, please close the game and try again", True)
+        return
     lethalCompanyPath = findInstallPath()
 
     eel.updateProgressText("downloadingMods", True)
@@ -113,9 +126,11 @@ def pythonMain():
     eel.addToConsole("Extracting LethalMods", False, True)
     eel.updateProgressText("downloadingMods")
     # extract the zip file
-    with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
-        zip_ref.extractall(lethalCompanyPath + r"\LethalMods")
-
+    try:
+        with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
+            zip_ref.extractall(lethalCompanyPath + r"\LethalMods")
+    except:
+        eel.addToConsole("Failed to extract LethalMods", True)
     eel.updateProgressText("extractingMods")
     eel.addToConsole("Deleting old LethalMods", False, True)
     # delete BepInEx folder
