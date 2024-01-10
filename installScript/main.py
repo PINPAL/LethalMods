@@ -8,7 +8,7 @@ import subprocess
 from urllib.request import urlopen
 
 # To build the exe run the following command in the terminal
-# python -m PyInstaller main.py -y --onefile -n LC-Mod-Installer --add-data "web;web" --icon web/favicon.ico --noconsole
+# python -m PyInstaller main.py -y --onefile -n LC-Mod-Installer --add-data "web;web" --icon web/favicon.ico --noconsole --version-file version.txt
 
 # initialize eel
 eel.init('web', allowed_extensions=['.js', '.html'])

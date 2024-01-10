@@ -2,3 +2,5 @@ installScript/build/*
 installScript/dist/*.log
 installScript/*.spec
 installScript/*.log
+installScript/dist/*.pfx
+installScript/dist/*.txt
