@@ -2,13 +2,12 @@ import eel
 import os
 import winreg
 import vdf
-import logging
 import zipfile
 import shutil
 from urllib.request import urlopen
 
 # To build the exe run the following command in the terminal
-# python -m PyInstaller main.py -y --onefile -n LC-Mod-Installer --add-data "web;web" --hide-console hide-early --icon=web/favicon.ico
+# python -m PyInstaller main.py -y --onefile -n LC-Mod-Installer --add-data "web;web" --icon web/favicon.ico --noconsole
 
 # initialize eel
 eel.init('web', allowed_extensions=['.js', '.html'])
@@ -70,9 +69,11 @@ def download(url: str, filename: str):
         previousSize = 0
         try:
             totalSize = int(r.info()["Content-Length"])
+            eel.addToConsole("Total: " + str(round(totalSize / 1024 / 1024, 2)) + "MB")
         except:
             eel.addToConsole("Could not get Content-Length", True)
-        eel.addToConsole("Total: " + str(round(totalSize / 1024 / 1024, 2)) + "MB")
+            eel.addToConsole("Downloading anyway..")
+            totalSize = 0
         with open(filename, "ab") as f:
             while True:
                 # Read a piece of the file we are downloading.
@@ -100,74 +101,71 @@ def download(url: str, filename: str):
 @eel.expose
 def pythonMain():
     eel.addToConsole("Running Python.." ) 
+    lethalCompanyPath = findInstallPath()
+
+    eel.updateProgressText("downloadingMods", True)
+    eel.addToConsole("Downloading the latest version of Lethal Company Mods", False, True)
+    eel.addToConsole("Please wait, this may take a while..")
+    pathToZipFile = lethalCompanyPath + r"\LethalMods.zip"
+    download("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
+    eel.addToConsole("LethalMods downloaded to: " + pathToZipFile)
+
+    eel.addToConsole("Extracting LethalMods", False, True)
+    eel.updateProgressText("downloadingMods")
+    # extract the zip file
+    with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
+        zip_ref.extractall(lethalCompanyPath + r"\LethalMods")
+
+    eel.updateProgressText("extractingMods")
+    eel.addToConsole("Deleting old LethalMods", False, True)
+    # delete BepInEx folder
     try:
-        lethalCompanyPath = findInstallPath()
-
-        eel.updateProgressText("downloadingMods", True)
-        eel.addToConsole("Downloading the latest version of Lethal Company Mods", False, True)
-        eel.addToConsole("Please wait, this may take a while..")
-        pathToZipFile = lethalCompanyPath + r"\LethalMods.zip"
-        download("https://codeload.github.com/PINPAL/LethalMods/zip/refs/heads/main", pathToZipFile)
-        eel.addToConsole("LethalMods downloaded to: " + pathToZipFile)
-
-        eel.addToConsole("Extracting LethalMods", False, True)
-        eel.updateProgressText("downloadingMods")
-        # extract the zip file
-        with zipfile.ZipFile(pathToZipFile, 'r') as zip_ref:
-            zip_ref.extractall(lethalCompanyPath + r"\LethalMods")
-
-        eel.updateProgressText("extractingMods")
-        eel.addToConsole("Deleting old LethalMods", False, True)
-        # delete BepInEx folder
-        try:
-            shutil.rmtree(lethalCompanyPath + r"\BepInEx")
-            eel.addToConsole("BepInEx deleted")
-        except:
-            eel.addToConsole("BepInEx Folder not found", True)
-        # delete doorstop_config.ini
-        try:
-            os.remove(lethalCompanyPath + r"\doorstop_config.ini")
-            eel.addToConsole("doorstop_config.ini deleted")
-        except:
-            eel.addToConsole("doorstop_config.ini not found", True)
-        # delete winhttp.dll
-        try:
-            os.remove(lethalCompanyPath + r"\winhttp.dll")
-            eel.addToConsole("winhttp.dll deleted")
-        except:
-            eel.addToConsole("winhttp.dll not found", True) 
-
-        eel.updateProgressText("removingOldMods")
-        eel.addToConsole("Moving Mod Files", False, True)
-        try:
-            # move the new BepInEx folder
-            shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\BepInEx", lethalCompanyPath)
-            eel.addToConsole("BepInEx moved")
-            # move the new doorstop_config.ini
-            shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\doorstop_config.ini", lethalCompanyPath)
-            eel.addToConsole("doorstop_config.ini moved")
-            # move the new winhttp.dll
-            shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\winhttp.dll", lethalCompanyPath)
-            eel.addToConsole("winhttp.dll moved")
-        except:
-            eel.addToConsole("Failed to move files", True)
-
-        eel.updateProgressText("movingNewMods")
-        eel.addToConsole("Cleaning up LethalMods", False, True)
-        try:
-            shutil.rmtree(lethalCompanyPath + r"/LethalMods")
-            eel.addToConsole("LethalMods deleted")
-            os.remove(lethalCompanyPath + r"/LethalMods.zip")
-            eel.addToConsole("LethalMods.zip deleted")
-        except:
-            eel.addToConsole("Failed to delete LethalMods", True)
-
-        # finished
-        eel.updateProgressText("cleaningUp")
-        eel.updateProgressText("complete")
-        eel.addToConsole("LethalMods installed successfully", False, True, True)
+        shutil.rmtree(lethalCompanyPath + r"\BepInEx")
+        eel.addToConsole("BepInEx deleted")
     except:
-        logging.exception("Something awful happened!")
+        eel.addToConsole("BepInEx Folder not found", True)
+    # delete doorstop_config.ini
+    try:
+        os.remove(lethalCompanyPath + r"\doorstop_config.ini")
+        eel.addToConsole("doorstop_config.ini deleted")
+    except:
+        eel.addToConsole("doorstop_config.ini not found", True)
+    # delete winhttp.dll
+    try:
+        os.remove(lethalCompanyPath + r"\winhttp.dll")
+        eel.addToConsole("winhttp.dll deleted")
+    except:
+        eel.addToConsole("winhttp.dll not found", True) 
+
+    eel.updateProgressText("removingOldMods")
+    eel.addToConsole("Moving Mod Files", False, True)
+    try:
+        # move the new BepInEx folder
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\BepInEx", lethalCompanyPath)
+        eel.addToConsole("BepInEx moved")
+        # move the new doorstop_config.ini
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\doorstop_config.ini", lethalCompanyPath)
+        eel.addToConsole("doorstop_config.ini moved")
+        # move the new winhttp.dll
+        shutil.move(lethalCompanyPath + r"\LethalMods\LethalMods-main\LethalCompany\winhttp.dll", lethalCompanyPath)
+        eel.addToConsole("winhttp.dll moved")
+    except:
+        eel.addToConsole("Failed to move files", True)
+
+    eel.updateProgressText("movingNewMods")
+    eel.addToConsole("Cleaning up LethalMods", False, True)
+    try:
+        shutil.rmtree(lethalCompanyPath + r"/LethalMods")
+        eel.addToConsole("LethalMods deleted")
+        os.remove(lethalCompanyPath + r"/LethalMods.zip")
+        eel.addToConsole("LethalMods.zip deleted")
+    except:
+        eel.addToConsole("Failed to delete LethalMods", True)
+
+    # finished
+    eel.updateProgressText("cleaningUp")
+    eel.updateProgressText("complete")
+    eel.addToConsole("LethalMods installed successfully", False, True, True)
 
 # run the GUI
 eel.start('main.html', size=(1000, 540), Block=False ) 

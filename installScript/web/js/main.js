@@ -1,5 +1,4 @@
-const consoleParent = document.getElementById("console");
-const console = document.getElementById("console").getElementsByTagName("div")[0];
+const frontendConsole = document.getElementById("console").getElementsByTagName("div")[0];
 const progressSteps = document.getElementsByClassName("progressCheck");
 
 const completeSound = new Audio("assets/complete.mp3");
@@ -43,9 +42,9 @@ function addToConsole(text, isError = false, isHeader = false, isSuccess = false
 		completeSound.play();
 	}
 	// add to console
-	console.append(span);
+	frontendConsole.append(span);
 	// scroll to bottom
-	console.scrollTo(0, console.scrollHeight);
+	frontendConsole.scrollTo(0, frontendConsole.scrollHeight);
 }
 
 function updateProgressBar(elementId, progress) {
@@ -54,7 +53,8 @@ function updateProgressBar(elementId, progress) {
 }
 eel.expose(updateDownloadProgress); // Expose this function to Python
 function updateDownloadProgress(current, total) {
-	if (total > 0) {
+	console.log(`current: ${current} total: ${total}`);
+	if (total > 1) {
 		progress = Math.round((current / total) * 100);
 		currentMB = Math.round(current / 1024 / 1024);
 		totalMB = Math.round(total / 1024 / 1024);
@@ -62,7 +62,7 @@ function updateDownloadProgress(current, total) {
 		progress = totalProgress + (progress / 100) * (100 / 9);
 		updateProgressBar("mainProgressBar", progress);
 	} else {
-		addToConsole("Downloading Mods: " + currentMB + "MB");
+		addToConsole("Downloading Mods: " + currentMB + "MB of Unknown Size");
 	}
 }
 
