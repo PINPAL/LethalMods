@@ -6,18 +6,37 @@ import zipfile
 import shutil
 import subprocess
 import threading
+import sys
+import pygame
 from urllib.request import urlopen
 from PIL import Image
 
 # python -m PyInstaller main.py -y --onefile -n LC-Mod-Installer --add-data "assets;assets" --icon assets/favicon.ico --noconsole --version-file version.txt
 # todo:
 # - add progress bar to sidebar
-# - add sounds
 # - add antialiasing to GUI (maybe?)
 
+# Sound
+def playSound(soundPath):
+    pygame.init()
+    pygame.mixer.init()
+    sound = pygame.mixer.Sound(soundPath)
+    sound.set_volume(0.2)
+    sound.play() 
+
+def getAbsolutePath(relative_path):
+    # Get absolute path to resource, works for dev and for PyInstaller 
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 # Images
-checkmark_off = customtkinter.CTkImage(dark_image=Image.open("assets/checkmark_off.png"),size=(24, 24))
-checkmark_on = customtkinter.CTkImage(dark_image=Image.open("assets/checkmark_on.png"),size=(24, 24))
+checkmark_off = customtkinter.CTkImage(dark_image=Image.open(getAbsolutePath(r"assets\checkmark_off.png")),size=(24, 24))
+checkmark_on = customtkinter.CTkImage(dark_image=Image.open(getAbsolutePath(r"assets\checkmark_on.png")),size=(24, 24))
 
 totalProgress = 0
 
@@ -88,7 +107,7 @@ def download(url: str, filename: str):
             totalSize = int(r.info()["Content-Length"])
             addConsoleText("Total: " + str(round(totalSize / 1024 / 1024, 2)) + "MB")
         except:
-            addConsoleText("Could not get Content-Length", type="error")
+            addConsoleText("Warning: Could not get Content-Length. Download percentage will not be available.", type="warn")
             addConsoleText("Downloading anyway..")
         with open(filename, "ab") as f:
             while True:
@@ -208,7 +227,8 @@ def startInstallation():
         updateProgressBar(100)
         progressBar.configure(progress_color=consoleTextError)
     else:
-        addConsoleText("LethalMods installed successfully", isHeader=True, type="success")
+        addConsoleText("Lethal Company Mods installed successfully", isHeader=True, type="success")
+        addConsoleText("Enjoy the game!", type="success")
         updateProgressBar(100)
 
 # color variables
@@ -217,6 +237,7 @@ consoleBackground = "#31323c"
 consoleTextNormal = "#a4a8ac"
 consoleTextHeader = "#ffffff"
 consoleTextError = "#c95862"
+consoleTextWarn = "#d9a960"
 consoleTextSuccess = "#9dcc67"
 sidebarBackground = "#5cabed"
 sidebarForeground = "#a3e0f7"
@@ -224,7 +245,8 @@ buttonBorder = "#53545c"
 
 # Define App
 App = customtkinter.CTk()
-App.iconbitmap("assets/favicon.ico")
+App.iconbitmap(getAbsolutePath(r"assets\favicon.ico"))
+App.attributes("-topmost", True)
 App.title("Lethal Company Mod Installer")
 App._set_appearance_mode("dark")
 App.geometry("960x540")
@@ -295,7 +317,7 @@ subtitleLink = customtkinter.CTkLabel(subtitleFrame, text="pinpal.github.io", fo
 subtitleLink.grid(row=0, column=2, padx=0, pady=0, sticky="e")
 # Add Logo to Main Content Header
 logo = customtkinter.CTkLabel(mainContentHeader, text="")
-logo.configure(image=customtkinter.CTkImage(dark_image=Image.open("assets/favicon.ico"),size=(48, 48)))
+logo.configure(image=customtkinter.CTkImage(dark_image=Image.open(getAbsolutePath(r"assets\favicon.ico")),size=(48, 48)))
 logo.grid(row=0, column=2, padx=0, pady=0, sticky="e")
 
 # Add "console" to Main Content
@@ -338,7 +360,7 @@ installButton.configure(command=threading.Thread(target=startInstallation).start
 # Function to add text to console
 global currentConsoleRow
 currentConsoleRow = 0
-def addConsoleText(text:str, isHeader: bool = False, type: {"normal", "error", "success"} = "normal"):
+def addConsoleText(text:str, isHeader: bool = False, type: {"normal", "error", "success", "warn"} = "normal"):
     global currentConsoleRow
     # Handle Custom Colors for Type
     textColor = consoleTextNormal
@@ -346,8 +368,12 @@ def addConsoleText(text:str, isHeader: bool = False, type: {"normal", "error", "
         textColor = consoleTextHeader
     elif (type == "error"):
         textColor = consoleTextError
+        playSound(getAbsolutePath(r"assets\error.mp3"))
+    elif (type == "warn"):
+        textColor = consoleTextWarn
     elif (type == "success"):
         textColor = consoleTextSuccess
+        playSound(getAbsolutePath(r"assets\success.mp3"))
     # Create Label
     consoleText = customtkinter.CTkLabel(console)
     consoleText.configure(text=text)
